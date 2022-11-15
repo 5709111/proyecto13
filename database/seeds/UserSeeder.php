@@ -43,6 +43,7 @@ class UserSeeder extends Seeder
                 ->value('id'),
             'is_admin'=>true,
         ]);
+
         /*
         User::create([
             'name' => 'Juan Martinez',
