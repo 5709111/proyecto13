@@ -23,6 +23,6 @@ class ProfessionSeeder extends Seeder
         Profession::create([
             'title'=>'Diseñador Back-end'
         ]);
-
+        factory(Profession::class,48)->create();
     }
 }
