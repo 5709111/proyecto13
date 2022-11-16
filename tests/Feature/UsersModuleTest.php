@@ -57,6 +57,15 @@ class UsersModuleTest extends TestCase
             ->assertSee($user->name)
             ->assertSee($user->email);
     }
+    /**
+     * @test
+     */
+    function it_displays_a_404_error_if_the_user_is_not_found()
+    {
+        $this->get('usuarios/999')
+            ->assertStatus(404)
+            ->assertSee('Pagina no encontrada');
+    }
 
     /**
      * @test
@@ -67,4 +76,5 @@ class UsersModuleTest extends TestCase
             ->assertStatus(200)
             ->assertSee('Creando nuevo usuario');
     }
+
 }
