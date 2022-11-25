@@ -21,7 +21,7 @@
         {{csrf_field()}}
         {{method_field('PUT')}}
 
-        <label for="name">Nombre</label>
+        <label for="name">Nombree</label>
         <input type="text" name="name" placeholder="Nombre" value="{{old('name',$user->name)}}">
         @if($errors->has('name'))
             <p>{{$errors->first('name')}}</p>
