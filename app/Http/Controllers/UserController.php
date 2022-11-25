@@ -93,14 +93,25 @@ class UserController extends Controller
     {
         $data = request()->validate([
             'name'=>'required',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+            'password' => '',
         ]);
 
-        $data['password'] = bcrypt($data['password']);
+        if ($data['password']!=null){
+            $data['password']=bcrypt($data['password']);
+        }else{
+            unset($data['password']);
+        }
+
 
         $user->update($data);
 
         return redirect()->route('user.show',$user);
+    }
+
+    public function destroy(User $user)
+    {
+        $user->delete();
+        return redirect()->route('users');
     }
 }

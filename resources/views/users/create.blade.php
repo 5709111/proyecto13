@@ -3,48 +3,45 @@
 @section('title', 'Nuevo usuario')
 
 @section('content')
-    <h1>Crear nuevo usuario</h1>
+    <div class="card">
+        <div class="card-header h4">
+            Crear nuevo usuario
+        </div>
+    </div>
 
     @if($errors->any())
         <div class="alert alert-danger">
             <h6>Por favor, corrige los siguientes errores</h6>
-
-
-        <ul>
-            @foreach($errors->all() as $error)
-                <li>{{$error}}</li>
-            @endforeach
-        </ul>
+            <ul>
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
         </div>
-
     @endif
 
     <form action="{{ route('user.store') }}" method="post">
-        {{csrf_field()}}
+        {{ csrf_field() }}
 
+        <div class="form-group">
+            <label for="name">Nombre:</label>
+            <input type="text" name="name" class="form-control" placeholder="Nombre"
+                   value="{{ old('name') }}">
+        </div>
 
-        <label for="name">Nombre</label>
-        <input type="text" name="name" placeholder="Nombre" value="{{old('name')}}">
-        @if($errors->has('name'))
-            <p>{{$errors->first('name')}}</p>
-        @endif
-        <br>
+        <div class="form-group">
+            <label for="email">Correo electrónico:</label>
+            <input type="email" name="email" class="form-control"
+                   placeholder="Correo electrónico" value="{{ old('email') }}">
+        </div>
 
-        <label for="email">Correo electronico</label>
-        <input type="email" name="email" placeholder="Correo electrónico" value="{{old('email')}}">
-        @if($errors->has('email'))
-            <p>{{$errors->first('email')}}</p>
-        @endif
-        <br>
-        <label for="password">Contraseña:</label>
-        <input type="password" name="password" placeholder="Escribe tu contraseña">
+        <div class="form-group">
+            <label for="password">Contraseña:</label>
+            <input type="password" name="password" class="form-control"
+                   placeholder="Escribe tu contraseña">
+        </div>
 
-        <br>
-        <button type="submit">Crear usuario</button>
+        <button type="submit" class="btn btn-primary">Crear usuario</button>
+        <a href="{{ route('users') }}" class="btn btn-link">Regresar al listado de usuarios</a>
     </form>
-
-    <p>
-        <a href="{{ route('users') }}">Regresar al listado de usuarios</a>
-
-    </p>
 @endsection
