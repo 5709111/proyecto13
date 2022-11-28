@@ -13,13 +13,17 @@ class UsersModuleTest extends TestCase
 {
     use RefreshDatabase;
 
+    private $profession;
+
     public function getValidData(array $custom = [])
     {
+        $this->profession = factory(Profession::class)->create();
+
         return array_filter(array_merge([
             'name' => 'Pepe',
             'email' => 'pepe@mail.es',
             'password' => '12345678',
-            'profession_id' => factory(Profession::class)->create()->id,
+            'profession_id' => $this->profession->id,
             'bio' => 'Programador de Laravel y Vue.js',
             'twitter' => 'https://twitter.com/pepe',
         ], $custom));
@@ -96,6 +100,7 @@ class UsersModuleTest extends TestCase
             'name' => 'Pepe',
             'email' => 'pepe@mail.es',
             'password' => '12345678',
+            'profession_id' => $this->profession->id,
         ]);
 
         $this->assertDatabaseHas('user_profiles', [
@@ -167,6 +172,55 @@ class UsersModuleTest extends TestCase
 
         $this->assertEquals(1, User::count());
     }
+
+    /** @test */
+    function the_profession_id_field_is_optional()
+    {
+        $this->post('usuarios', $this->getValidData([
+            'profession_id' => null
+        ]))->assertRedirect('usuarios');
+
+        $this->assertCredentials([
+            'name' => 'Pepe',
+            'email' => 'pepe@mail.es',
+            'password' => '12345678',
+            'profession_id' => null,
+        ]);
+
+        $this->assertDatabaseHas('user_profiles', [
+            'bio' => 'Programador de Laravel y Vue.js',
+            'user_id' => User::findByEmail('pepe@mail.es')->id,
+        ]);
+    }
+
+    /** @test */
+    function the_profession_id_must_be_valid()
+    {
+        $this->from('usuarios/nuevo')
+            ->post('usuarios', $this->getValidData([
+                'profession_id' => '999'
+            ]))->assertRedirect('usuarios/nuevo')
+            ->assertSessionHasErrors(['profession_id']);
+
+        $this->assertDatabaseEmpty('users');
+    }
+
+    /** @test */
+    function only_not_deleted_professions_can_be_selected()
+    {
+        $deletedProfession = factory(Profession::class)->create([
+            'deleted_at' => now()->format('Y-m-d')
+        ]);
+
+        $this->from('usuarios/nuevo')
+            ->post('usuarios', $this->getValidData([
+                'profession_id' => $deletedProfession->id
+            ]))->assertRedirect('usuarios/nuevo')
+            ->assertSessionHasErrors(['profession_id']);
+
+        $this->assertDatabaseEmpty('users');
+    }
+
 
     /** @test */
     function it_loads_the_edit_user_page()
