@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
-class CreateProfessionsTable extends Migration
+class CreateUserProfilesTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,10 +13,13 @@ class CreateProfessionsTable extends Migration
      */
     public function up()
     {
-        Schema::create('professions', function (Blueprint $table) {
+        Schema::create('user_profiles', function (Blueprint $table) {
             $table->increments('id');
 
-            $table->string('title',100);
+            $table->string('bio', 1000);
+            $table->string('twitter')->nullable();
+            $table->unsignedInteger('user_id');
+            $table->foreign('user_id')->references('id')->on('users');
 
             $table->timestamps();
         });
@@ -29,6 +32,6 @@ class CreateProfessionsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('professions');
+        Schema::dropIfExists('user_profiles');
     }
 }
