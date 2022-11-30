@@ -62,7 +62,34 @@
             </select>
         </div>
 
-        <button type="submit" class="btn btn-primary">Crear usuario</button>
-        <a href="{{ route('users') }}" class="btn btn-link">Regresar al listado de usuarios</a>
+        <h5>Habilidades</h5>
+
+        @foreach($skills as $skill)
+            <div class="form-check form-check-inline">
+                <input name="skills[]" class="form-check-input" type="checkbox"
+                       id="skill_{{ $skill->id }}" value="{{ $skill->id }}"
+                       {{ in_array($skill->id, old('skills', [])) ? ' checked' : '' }}
+                >
+                <label class="form-check-label" for="skill_{{ $skill->id }}">{{ $skill->name }}</label>
+            </div>
+        @endforeach
+
+        <h5 class="mt-3">Rol</h5>
+
+        @foreach($roles as $role => $name)
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="role"
+                       id="role_{{ $role }}" value="{{ $role }}"
+                       {{ old('role') === $role ? ' checked' : '' }}
+                >
+                <label class="form-check-label" for="{{ $role }}">{{ $name }}</label>
+            </div>
+        @endforeach
+
+
+        <div class="form-group mt-4">
+            <button type="submit" class="btn btn-primary">Crear usuario</button>
+            <a href="{{ route('users') }}" class="btn btn-link">Regresar al listado de usuarios</a>
+        </div>
     </form>
 @endsection
