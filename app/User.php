@@ -2,21 +2,18 @@
 
 namespace App;
 
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Support\Facades\DB;
 
 class User extends Authenticatable
 {
-    use Notifiable;
+    use Notifiable, SoftDeletes;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
-    protected $fillable = [
-        'name', 'email', 'password',
+    protected $guarded = [];
+
+    protected $casts = [
+        'active' => 'bool'
     ];
 
     /**
@@ -28,14 +25,21 @@ class User extends Authenticatable
         'password', 'remember_token'
     ];
 
-    public function profession()
+    /**
+     * Create a new Eloquent query builder for the model.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @return \Illuminate\Database\Eloquent\Builder|static
+     */
+    public function newEloquentBuilder($query)
     {
-        return $this->belongsTo(Profession::class);
+        return new UserQuery($query);
     }
+
 
     public function profile()
     {
-        return $this->hasOne(UserProfile::class);
+        return $this->hasOne(UserProfile::class)->withDefault();
     }
 
     public function skills()
@@ -43,36 +47,35 @@ class User extends Authenticatable
         return $this->belongsToMany(Skill::class);
     }
 
+    public function team()
+    {
+        return $this->belongsTo(Team::class)->withDefault();
+    }
+
     public function isAdmin()
     {
         return $this->role === 'admin';
     }
 
-    public static function findByEmail($email)
+    public function getNameAttribute()
     {
-        return static::whereEmail($email)->first();
+        return $this->first_name . ' ' . $this->last_name;
     }
 
-    public static function createUser($data)
+    public function getStateAttribute()
     {
-        DB::transaction(function () use ($data) {
-            $user = new User([
-                'name' => $data['name'],
-                'email' => $data['email'],
-                'password' => bcrypt($data['password']),
-            ]);
+        if ($this->active != null) {
+            return $this->active ? 'active' : 'inactive';
+        }
+    }
 
-            $user->role = $data['role'] ?? 'user';
+    public function setStateAttribute($value)
+    {
+        $this->attributes['active'] = $value == 'active';
+    }
 
-            $user->save();
-
-            $user->profile()->create([
-                'bio' => $data['bio'],
-                'twitter' => $data['twitter'],
-                'profession_id' => $data['profession_id'],
-            ]);
-
-            $user->skills()->attach($data['skills'] ?? []);
-        });
+    public function scopeFilterBy($query, array $filters)
+    {
+        return (new UserFilter())->applyTo($query, $filters);
     }
 }

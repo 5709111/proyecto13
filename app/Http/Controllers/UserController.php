@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\{Http\Requests\CreateUserRequest, Profession, Skill, User, UserProfile};
+use App\{Http\Requests\CreateUserRequest, Http\Requests\UpdateUserRequest, Profession, Skill, User, UserProfile};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -10,27 +10,27 @@ class UserController extends Controller
 {
     public function index()
     {
-        //$users = DB::table('users')->get();
+        $users = User::query()
+            ->with('team','skills','profile.profession')
+            ->when(request('team'), function ($query, $team) {
+                if ($team === 'with_team') {
+                    $query->has('team');
+                } elseif ($team === 'without_team') {
+                    $query->doesntHave('team');
+                }
+            })
+            ->filterBy(request()->all(['state', 'role', 'search']))
+            ->orderBy('created_at', 'DESC')
+            ->paginate();
 
-        $users = User::all();
+        $users->appends(request(['search','team', 'role', 'state']));
 
-        $title = 'Listado de usuarios';
-
-        /*if (request()->has('empty')) {
-            $users = [];
-        } else {
-            $users = ['Joel', 'Ellie', 'Tess', 'Tommy', 'Bill'];
-        }*/
-
-        return view('users.index', compact(
-            'title',
-            'users'
-            )
-        );
-
-        /*return view('users.index')
-            ->with('users', User::all())
-            ->with('title', 'Listado de usuarios');*/
+        return view('users.index', [
+            'users' => $users,
+            'view' => 'index',
+            'skills' => Skill::orderBy('name')->get(),
+            'checkedSkills' => collect(request('skills')),
+        ]);
     }
 
     public function show(User $user)
@@ -42,13 +42,18 @@ class UserController extends Controller
         return view('users.show', compact('user'));
     }
 
-    public function create()
+    protected function form($view, User $user)
     {
-        return view('users.create', [
+        return view($view, [
+            'user' => $user,
             'professions' => Profession::orderBy('title', 'ASC')->get(),
             'skills' => Skill::orderBy('name', 'ASC')->get(),
-            'roles' => trans('users.roles'),
         ]);
+    }
+
+    public function create()
+    {
+        return $this->form('users.create', new User);
     }
 
     public function store(CreateUserRequest $request)
@@ -60,33 +65,41 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
-        return view('users.edit', compact('user'));
+        return $this->form('users.edit', $user);
     }
 
-    public function update(User $user)
+    public function update(UpdateUserRequest $request, User $user)
     {
-        $data = request()->validate([
-            'name' => 'required',
-            'email' => 'required|email|unique:users,email,'.$user->id,
-            'password' => '',
-        ]);
-
-        if ($data['password'] != null) {
-            $data['password'] = bcrypt($data['password']);
-        } else {
-            unset($data['password']);
-        }
-
-        $user->update($data);
+        $request->updateUser($user);
 
         return redirect()->route('user.show', $user);
     }
 
-    public function destroy(User $user)
+    public function destroy($id)
     {
+        $user = User::onlyTrashed()
+            ->where('id', $id)
+            ->firstOrFail();
+
+        $user->forceDelete();
+
+        return redirect()->route('users.trashed');
+    }
+
+    public function trash(User $user)
+    {
+        $user->profile()->delete();
         $user->delete();
 
         return redirect()->route('users');
+    }
+
+    public function trashed()
+    {
+        return view('users.index', [
+            'users' => User::onlyTrashed()->paginate(),
+            'view' => 'trash',
+        ]);
     }
 
 }

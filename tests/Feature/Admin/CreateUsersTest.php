@@ -14,13 +14,15 @@ class CreateUsersTest extends TestCase
     use RefreshDatabase;
 
     protected $defaultData = [
-        'name' => 'Pepe',
+        'first_name' => 'Pepe',
+        'last_name' => 'Pérez',
         'email' => 'pepe@mail.es',
         'password' => '12345678',
         'profession_id' => '',
         'bio' => 'Programador de Laravel y Vue.js',
         'twitter' => 'https://twitter.com/pepe',
         'role' => 'user',
+        'state' => 'active',
     ];
 
     /** @test */
@@ -57,10 +59,12 @@ class CreateUsersTest extends TestCase
 
 
         $this->assertCredentials([
-            'name' => 'Pepe',
+            'first_name' => 'Pepe',
+            'last_name' => 'Pérez',
             'email' => 'pepe@mail.es',
             'password' => '12345678',
             'role' => 'user',
+            'active' => true,
         ]);
 
         $user = User::findByEmail('pepe@mail.es');
@@ -101,15 +105,29 @@ class CreateUsersTest extends TestCase
     }
 
     /** @test */
-    function the_name_is_required()
+    function the_first_name_is_required()
     {
         $this->withExceptionHandling();
 
         $this->from('usuarios/nuevo')
             ->post('usuarios', $this->getValidData([
-                'name' => ''
+                'first_name' => ''
             ]))
-            ->assertSessionHasErrors(['name' => 'El campo nombre es obligatorio']);
+            ->assertSessionHasErrors(['first_name' => 'El campo nombre es obligatorio']);
+
+        $this->assertDatabaseEmpty('users');
+    }
+
+    /** @test */
+    function the_last_name_is_required()
+    {
+        $this->withExceptionHandling();
+
+        $this->from('usuarios/nuevo')
+            ->post('usuarios', $this->getValidData([
+                'last_name' => ''
+            ]))
+            ->assertSessionHasErrors(['last_name' => 'El campo apellidos es obligatorio']);
 
         $this->assertDatabaseEmpty('users');
     }
@@ -182,7 +200,7 @@ class CreateUsersTest extends TestCase
         ]))->assertRedirect('usuarios');
 
         $this->assertCredentials([
-            'name' => 'Pepe',
+            'first_name' => 'Pepe',
             'email' => 'pepe@mail.es',
             'password' => '12345678',
         ]);
@@ -235,7 +253,7 @@ class CreateUsersTest extends TestCase
         ]))->assertRedirect('usuarios');
 
         $this->assertCredentials([
-            'name' => 'Pepe',
+            'first_name' => 'Pepe',
             'email' => 'pepe@mail.es',
             'password' => '12345678',
         ]);
@@ -305,4 +323,31 @@ class CreateUsersTest extends TestCase
         $this->assertDatabaseEmpty('users');
     }
 
+    /** @test */
+    function the_state_must_be_valid()
+    {
+        $this->withExceptionHandling();
+
+        $this->from('usuarios/nuevo')
+            ->post('usuarios', $this->getValidData([
+                'state' => 'invalid-state',
+            ]))
+            ->assertSessionHasErrors('state');
+
+        $this->assertDatabaseEmpty('users');
+    }
+
+    /** @test */
+    function the_state_is_required()
+    {
+        $this->withExceptionHandling();
+
+        $this->from('usuarios/nuevo')
+            ->post('usuarios', $this->getValidData([
+                'state' => null,
+            ]))
+            ->assertSessionHasErrors('state');
+
+        $this->assertDatabaseEmpty('users');
+    }
 }
